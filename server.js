@@ -23,11 +23,18 @@ const io = socketIO(server, {
 app.use(cors());
 app.use(express.json());
 
+// Root route
+app.get('/', (req, res) => {
+  res.send('🚀 Bus Tracker Backend is running!');
+});
+
+
 // --- Routes ---
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/buses', require('./routes/buses'));
 app.use('/api/location', require('./routes/location'));
 app.use('/api/chat', require('./routes/chat'));
+
 
 // --- Socket.IO Auth Middleware ---
 io.use((socket, next) => {
