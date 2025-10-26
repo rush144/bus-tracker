@@ -1,4 +1,4 @@
-// server.js (or your main backend file)
+// server.js
 import express from 'express';
 import http from 'http';
 import { Server } from 'socket.io';
@@ -6,11 +6,17 @@ import cors from 'cors';
 
 const app = express();
 const server = http.createServer(app);
+
+// Allow CORS for localhost:5173 and other origins if needed
 const io = new Server(server, {
-  cors: { origin: '*' },
+  cors: {
+    origin: ["http://localhost:5173"], // add your frontend URL
+    methods: ["GET", "POST"],
+    credentials: true,
+  },
 });
 
-app.use(cors());
+app.use(cors({ origin: ["http://localhost:5173"] })); // optional for REST API
 app.use(express.json());
 
 // In-memory storage for live locations
@@ -39,6 +45,7 @@ io.on('connection', (socket) => {
   });
 });
 
-server.listen(3000, () => {
-  console.log('Server running on port 3000');
+const PORT = process.env.PORT || 3000;
+server.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
 });
