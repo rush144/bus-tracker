@@ -16,7 +16,7 @@ const server = http.createServer(app);
 // ✅ Allowed origins (update when frontend is hosted)
 const allowedOrigins = [
   'http://localhost:5173', // local frontend
-  'https://bus-tracker-frontend-u8p8.vercel.app', 
+  'https://bus-tracker-frontend.vercel.app', 
 ];
 
 const io = socketIO(server, {
