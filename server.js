@@ -12,31 +12,41 @@ dotenv.config();
 
 const app = express();
 const server = http.createServer(app);
+
+// ✅ Allowed origins (update when frontend is hosted)
+const allowedOrigins = [
+  'http://localhost:5173', // local frontend
+  'https://bus-tracker-frontend.netlify.app', // <-- replace with your actual deployed frontend URL
+];
+
 const io = socketIO(server, {
   cors: {
-    origin: '*',
-    methods: ['GET', 'POST']
-  }
+    origin: allowedOrigins,
+    methods: ['GET', 'POST'],
+    credentials: true,
+  },
 });
 
-// Middleware
-app.use(cors());
+// ✅ Middleware
+app.use(cors({
+  origin: allowedOrigins,
+  methods: ['GET', 'POST'],
+  credentials: true,
+}));
 app.use(express.json());
 
-// Root route
+// ✅ Test route
 app.get('/', (req, res) => {
   res.send('🚀 Bus Tracker Backend is running!');
 });
 
-
-// --- Routes ---
+// ✅ Routes
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/buses', require('./routes/buses'));
 app.use('/api/location', require('./routes/location'));
 app.use('/api/chat', require('./routes/chat'));
 
-
-// --- Socket.IO Auth Middleware ---
+// ✅ Socket.IO Auth Middleware
 io.use((socket, next) => {
   const token = socket.handshake.auth.token;
   if (!token) return next(new Error('Authentication token missing'));
@@ -51,30 +61,28 @@ io.use((socket, next) => {
   }
 });
 
-// --- Socket.IO Events ---
+// ✅ Socket.IO Events
 io.on('connection', (socket) => {
   console.log(`🔌 Client connected: ${socket.id} (${socket.user.username})`);
 
-  // Location updates from drivers
   socket.on('locationUpdate', (data) => {
-    io.emit('locationBroadcast', data); // send to all clients
+    io.emit('locationBroadcast', data);
   });
 
-  // Global chat messages
   socket.on('chatMessage', async (msgData) => {
     try {
       const savedChat = await ChatMessage.create({
         username: socket.user.username,
         role: socket.user.role,
         message: msgData.text,
-        timestamp: new Date()
+        timestamp: new Date(),
       });
 
       io.emit('chatMessage', {
         username: savedChat.username,
         role: savedChat.role,
         text: savedChat.message,
-        timestamp: savedChat.timestamp
+        timestamp: savedChat.timestamp,
       });
     } catch (err) {
       console.error('❌ Failed to save chat message:', err.message);
@@ -86,13 +94,18 @@ io.on('connection', (socket) => {
   });
 });
 
-// --- Connect MongoDB and Start Server ---
+// ✅ Handle Socket.IO connection errors
+io.engine.on('connection_error', (err) => {
+  console.log('❌ Socket.IO connection error:', err.message);
+});
+
+// ✅ MongoDB + Start Server
 mongoose.connect(process.env.MONGO_URI)
-  .then(() => {
-    console.log('✅ MongoDB connected successfully');
-    const port = process.env.PORT || 5000;
-    server.listen(port, '0.0.0.0', () => {
-      console.log(`🚀 Server running on port ${port}`);
-    });
-  })
-  .catch(err => console.error('❌ MongoDB connection error:', err));
+    .then(() => {
+      console.log('✅ MongoDB connected successfully');
+      const port = process.env.PORT || 5000;
+      server.listen(port, '0.0.0.0', () => {
+        console.log(`🚀 Server running on port ${port}`);
+      });
+    })
+    .catch(err => console.error('❌ MongoDB connection error:', err));
